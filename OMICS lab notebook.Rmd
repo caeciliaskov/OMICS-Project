@@ -1,0 +1,894 @@
+---
+title: 'Lab Notebook: OMICS Project'
+author: "Cæcilia Lind Skov-Jensen"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+### 1. Plan
+I will investigate the genetic correlation between **Parkinson's disease (PD)** and **red hair color**.  
+
+I plan to run some analysis using the Complex Traits Genetics Virtual Lab (CTG-VL).
+
+As detailed at [CTG-VL](https://vl.genoma.io/mydata/upload), the input format of the genome-wide association summary statistics (GWASS) file should be:  
+Tab separated and minimum should contain the columns CHR, BP, SNP, A1, A2, FREQ, BETA, SE and P. 
+The column "N" is optional but highly recommended if there are large discrepancies between sample sizes for each SNP.
+Prof Nyholt informed us that "A1" is the effect allele (EA), and "A2" is the non-effect allele (NEA).  
+
+Example of an input files is as follows:
+
+    CHR	BP	SNP	A1	A2	FREQ	BETA	SE	P   N
+    7	92383888	rs10	A	C	0.06431	 0.0013	0.0042	 7.5e-01    85000
+    12	126890980	rs1000000	A	G	0.2219	 0.0001	0.0021	 9.6e-01    85000
+    4	21618674	rs10000010	T	C	0.5086	-0.0001	0.0016	 9.4e-01    85000
+    4	1357325	rs10000012	C	G	0.8634	 0.0047	0.0025	 5.7e-02    85000
+    4	37225069	rs10000013	A	C	0.7708	-0.0061	0.0021	 3.3e-03    85000
+
+---------------------------------------
+
+### 2. Downloading GWAS data
+
+#### 2.1. Downloading Parkinson's disease GWAS:
+
+This phenotype was found and downloaded from the [International Parkinson Disease Genomics Consortium (IPDGC)](https://pdgenetics.org/resources). The GWAS is from [Nalls et al. 2019](https://pubmed.ncbi.nlm.nih.gov/31701892/) and is a GWAS META5 summary stats (excluding 23andMe).
+
+n_cases = 37,688 + 18,618 proxy-cases = 56,306  
+n_controls = 1,417,791  
+total sample size = 56,306 + 1,417,791 = 1,474,097  
+total sample size excluding 23andMe = 1,474,097 - 573,859 = 900,238
+
+**The downloading was completed in the following steps:**  
+
+1. Downloaded the GWAS summary statistics from the [International Parkinson Disease Genomics Consortium (IPDGC)](https://pdgenetics.org/resources).
+2. Uploaded the GWASS to the QUT HPC using FileZilla.
+3. Connected to the HPC (lyra.qut.edu.au) via SSH (terminal).
+4. Changed to my working directory.
+
+`cd Datasets`
+
+5. Checked the format of the file.
+
+`head nallsEtAl2019_excluding23andMe_allVariants.tab`
+
+    SNP	A1	A2	freq	b	se	p	N_cases	N_controls
+    chr11:88249377	T	C	0.9931	0.1575	0.1783	0.3771	7161	5356
+    chr1:60320992	A	G	0.9336	0.0605	0.0456	0.1846	26421	442271
+    chr2:18069070	T	C	0.9988	-0.6774	1.3519	0.6163	582	905
+    chr8:135908647	A	G	0.2081	-0.0358	0.0273	0.1887	26421	442271
+    chr12:3871714	A	C	0.9972	0.1489	1.0636	0.8886	749	658
+    chr16:77148858	A	G	0.9976	-0.1213	0.3874	0.7543	6248	4391
+    chr11:97895884	C	G	0.0573	-0.0543	0.0481	0.2589	26421	442271
+    chr5:30588976	T	C	0.0022	2.038	1.1008	0.06412	582	905
+    chr2:80117945	A	G	0.9979	-0.4366	0.4506	0.3326	5865	4689
+
+#### 2.2. Downloading red hair color GWAS:
+
+The GWAS was downloaded from [Morgan et al (2018)](https://datashare.ed.ac.uk/handle/10283/3930) via wget.
+
+For the red hair colour against brown and black hair colour, the blonde individuals were removed (red=15,731, non-red=283,920)
+
+n_cases = 15,731  
+n_controls = 283,920  
+sample size = 299,651   
+
+**The downloading was completed in the following steps:**  
+
+1. Downloaded the GWAS summary statistics from [Morgan et al (2018)](https://datashare.ed.ac.uk/handle/10283/3930).
+2. Uploaded the GWASS to the QUT HPC using FileZilla.
+3. Connected to the HPC (lyra.qut.edu.au) via SSH (terminal).
+4. Changed to my working directory.
+
+`cd Datasets`
+
+5. Merged the files into one file expect first line
+
+`awk 'FNR>1' GWASinitialred1.assoc.logistic GWASinitialred2.assoc.logistic GWASinitialred3.assoc.logistic GWASinitialred4.assoc.logistic GWASinitialred5.assoc.logistic GWASinitialred6.assoc.logistic GWASinitialred7.assoc.logistic GWASinitialred8.assoc.logistic GWASinitialred9.assoc.logistic GWASinitialred10.assoc.logistic GWASinitialred11.assoc.logistic GWASinitialred12.assoc.logistic GWASinitialred13.assoc.logistic GWASinitialred14.assoc.logistic GWASinitialred15.assoc.logistic GWASinitialred16.assoc.logistic GWASinitialred17.assoc.logistic GWASinitialred18.assoc.logistic GWASinitialred19.assoc.logistic GWASinitialred20.assoc.logistic GWASinitialred21.assoc.logistic GWASinitialred22.assoc.logistic > GWASinitialred1_22.assoc.logistic`
+
+6. Checked resulting file
+
+`head GWASinitialred1_22.assoc.logistic`  
+
+    1       rs3115860     753405    C        ADD   299305     0.9942      -0.3347       0.7378
+    1       rs2073813     753541    A        ADD   299124     0.9947       -0.305       0.7603
+    1       rs3131969     754182    A        ADD   299136     0.9952      -0.2766       0.7821
+    1       rs3131968     754192    A        ADD   299135     0.9947      -0.3055       0.7599
+    1       rs3131967     754334    T        ADD   299140     0.9955      -0.2617       0.7936
+    1       rs3115858     755890    A        ADD   299569     0.9928       -0.415       0.6781
+    1       rs3131962     756604    A        ADD   299077     0.9939      -0.3509       0.7257
+    1       rs3115853     757640    G        ADD   299478      0.996      -0.2338       0.8152
+    1       rs4951929     757734    C        ADD   299600     0.9943      -0.3276       0.7432
+
+#### 2.3. Downloading Melanoma GWAS:
+
+I searched for my phenotype in the 'phenotype_manifest' tab in the the Pan-UKBB manifest file linked from [Neale Lab](http://www.nealelab.is/uk-biobank), located at [Google Docs](https://docs.google.com/spreadsheets/d/1AeeADtT0U1AukliiNyiVzVRdLYPkTbruQSk38DeutU8/edit#gid=1797288938) and located the wget links to download the GWASS directly to my HPC folder.
+
+n_controls_EUR = 417,151  
+n_cases_EUR = 3,322  
+total sample size = 417,151 + 3,322 = 420,473  
+
+1. Connected to the HPC (lyra.qut.edu.au) via SSH (terminal).
+2. Changed to my working directory.
+
+`cd Datasets`
+
+3. Downloaded the GWAS summary statistics from [Neale Lab Google Docs](https://docs.google.com/spreadsheets/d/1AeeADtT0U1AukliiNyiVzVRdLYPkTbruQSk38DeutU8/edit#gid=1797288938).
+
+`wget https://pan-ukb-us-east-1.s3.amazonaws.com/sumstats_flat_files/categorical-20001-both_sexes-1059.tsv.bgz`
+
+4. Unziped the file.
+
+`zcat categorical-20001-both_sexes-1059.tsv.bgz > categorical-20001-both_sexes-1059.tsv`
+
+5. Viewed the format of the file.  
+
+`head categorical-20001-both_sexes-1059.tsv`
+
+    chr	pos	ref	alt	af_cases_EUR	af_controls_EUR	beta_EUR	se_EUR	pval_EUR	low_confidence_EUR
+    1	11063	T	G	5.194e-05	4.793e-05	1.401e+00	7.018e+00	-1.722e-01	true
+    1	13259	G	A	7.909e-05	2.796e-04	-8.672e-01	7.910e-01	-1.298e+00	true
+    1	17641	G	A	1.106e-03	8.289e-04	3.910e-01	4.636e-01	-9.188e-01	false
+    1	30741	C	A	NA	NA	NA	NA	NA	NA
+    1	51427	T	G	NA	NA	NA	NA	NA	NA
+    1	57222	T	C	3.648e-04	6.610e-04	-5.263e-01	5.307e-01	-1.135e+00	true
+    1	58396	T	C	4.509e-04	2.386e-04	8.711e-01	7.932e-01	-1.302e+00	true
+    1	62745	C	G	NA	NA	NA	NA	NA	NA
+    1	63668	G	A	0.000e+00	2.795e-05	-1.349e+00	2.646e+00	-4.940e-01	true
+
+----------------------------------
+
+### 3. Preparing data for analyses  
+
+#### 3.1. Preparing Parkinson's GWAS data:  
+
+The chr and bp are together in one column.
+
+##### 3.1.1. Extracting columns
+
+1. Split chr and bp column 
+
+`awk -F":" '$1=$1' OFS="\t" nallsEtAl2019_excluding23andMe_allVariants.tab > nallsEtAl2019_excluding23andMe_allVariants.tab.split`
+
+2. Use joe to add header to the new column and rename other columns
+
+`joe head nallsEtAl2019_excluding23andMe_allVariants.tab.split`
+
+3. Remove 'chr' text from first column
+
+`awk '{gsub(/\chr/, "")}1' nallsEtAl2019_excluding23andMe_allVariants.tab.split > nallsEtAl2019_excluding23andMe_allVariants.tab.split.withoutchr`
+
+4. View result
+
+`head nallsEtAl2019_excluding23andMe_allVariants.tab.split.withoutchr`
+
+    CHR	BP	A1	A2	FREQ	BETA	SE	P	N_cases	N_controls
+    11	88249377	T	C	0.9931	0.1575	0.1783	0.3771	7161	5356
+    1	60320992	A	G	0.9336	0.0605	0.0456	0.1846	26421	442271
+    2	18069070	T	C	0.9988	-0.6774	1.3519	0.6163	582	905
+    8	135908647	A	G	0.2081	-0.0358	0.0273	0.1887	26421	442271
+    12	3871714	A	C	0.9972	0.1489	1.0636	0.8886	749	658
+    16	77148858	A	G	0.9976	-0.1213	0.3874	0.7543	6248	4391
+    11	97895884	C	G	0.0573	-0.0543	0.0481	0.2589	26421	442271
+    5	30588976	T	C	0.0022	2.038	1.1008	0.06412	582	905
+    2	80117945	A	G	0.9979	-0.4366	0.4506	0.3326	5865	4689
+
+The columns I am interested in are the following:
+
+* CHR
+* BP
+* A1
+* A2
+* FREQ
+* BETA
+* SE
+* P
+
+5. Choose selected columns
+
+`awk -v OFS='\t' '{ print $1, $2, $3, $4, $5, $6, $7, $8 }' nallsEtAl2019_excluding23andMe_allVariants.tab.split.withoutchr > nallsEtAl2019_excluding23andMe_allVariants.tab.CTGVL`
+
+    CHR	BP	A1	A2	FREQ	BETA	SE	P
+    11	88249377	T	C	0.9931	0.1575	0.1783	0.3771
+    1	60320992	A	G	0.9336	0.0605	0.0456	0.1846
+    2	18069070	T	C	0.9988	-0.6774	1.3519	0.6163
+    8	135908647	A	G	0.2081	-0.0358	0.0273	0.1887
+    12	3871714	A	C	0.9972	0.1489	1.0636	0.8886
+    16	77148858	A	G	0.9976	-0.1213	0.3874	0.7543
+    11	97895884	C	G	0.0573	-0.0543	0.0481	0.2589
+    5	30588976	T	C	0.0022	2.038	1.1008	0.06412
+    2	80117945	A	G	0.9979	-0.4366	0.4506	0.3326
+
+##### 3.1.2. Adding rsID's
+
+1. Download 1000G reference file
+
+There are no rsID's. I therefore downloaded the 1000G reference file from [website](https://cloudstor.aarnet.edu.au/sender/?s=download&token=fe765306-add9-48e7-91d1-3845ab866a6c) and uploaded this file to the HPC via FileZilla.
+
+2. Unzip file and save as new file
+
+`unzip 1000G_20101123_v3_GIANT_chr1_23_Marker_Details.txt.zip > 1000G_20101123_v3_GIANT_chr1_23_Marker_Details.txt`
+
+3. Make new column in file with chr number and bp position
+
+`awk -v OFS='\t' '{print $3"_"$4, $0}' 1000G_20101123_v3_GIANT_chr1_23_Marker_Details.txt > 1000G_20101123_v3_GIANT_chr1_23_Marker_Details.txt.CHR_BP`
+
+4. View resulting file
+
+`head 1000G_20101123_v3_GIANT_chr1_23_Marker_Details.txt.CHR_BP`
+
+    chr_b37_pos_b37	minimac_names       minimac_names_if_no_rsID  chr_b37    pos_b37  Intrpl_pos_b36  chr_b36    pos_b36
+    1_10583	1:10583             rs58108140                1            10583  0               1              583
+    1_10611	1:10611             rs189107123               1            10611  0               1              611
+    1_13302	1:13302             rs180734498               1            13302  0               1             3165
+    1_13327	1:13327             rs144762171               1            13327  0               1             3190
+    1_13957	1:13957:TC_T        1:13957:TC_T              1            13957  0               1             3820
+    1_13980	1:13980             rs151276478               1            13980  0               1             3843
+    1_30923	1:30923             rs140337953               1            30923  0               1            20786
+    1_46402	1:46402:C_CTG       1:46402:C_CTG             1            46402  0               1            36265
+    1_47190	1:47190:G_GA        1:47190:G_GA              1            47190  0               1            37053
+
+5. Make new column in PD GWAS file with chr number and bp position
+
+`awk -v OFS='\t' '{print $1"_"$2, $0}' nallsEtAl2019_excluding23andMe_allVariants.tab.CTGVL > nallsEtAl2019_excluding23andMe_allVariants.tab.CTGVL.CHR_BP`
+
+6. View resulting file
+
+`head nallsEtAl2019_excluding23andMe_allVariants.tab.CTGVL.CHR_BP`
+
+    CHR_BP	CHR	BP	A1	A2	FREQ	BETA	SE	P
+    11_88249377	11	88249377	T	C	0.9931	0.1575	0.1783	0.3771
+    1_60320992	1	60320992	A	G	0.9336	0.0605	0.0456	0.1846
+    2_18069070	2	18069070	T	C	0.9988	-0.6774	1.3519	0.6163
+    8_135908647	8	135908647	A	G	0.2081	-0.0358	0.0273	0.1887
+    12_3871714	12	3871714	A	C	0.9972	0.1489	1.0636	0.8886
+    16_77148858	16	77148858	A	G	0.9976	-0.1213	0.3874	0.7543
+    11_97895884	11	97895884	C	G	0.0573	-0.0543	0.0481	0.2589
+    5_30588976	5	30588976	T	C	0.0022	2.038	1.1008	0.06412
+    2_80117945	2	80117945	A	G	0.9979	-0.4366	0.4506	0.3326
+
+If there are duplicate chr_bp variant names in either of the two files, then you could get incorrect matching. So we should first create a set of files with unique chr_bp variant names.  
+
+7. Create files containing only the chr_bp variant names
+
+`cut -f1 nallsEtAl2019_excluding23andMe_allVariants.tab.CTGVL.CHR_BP > nallsEtAl2019_excluding23andMe_allVariants.tab.CTGVL.CHR_BP.col1`  
+`cut -f1 1000G_20101123_v3_GIANT_chr1_23_Marker_Details.txt.CHR_BP > 1000G_20101123_v3_GIANT_chr1_23_Marker_Details.txt.CHR_BP.col1`  
+    
+8. Create a file containing only the unique chr_bp variant names in both the GWASS file and the 1000G reference file
+
+`sort nallsEtAl2019_excluding23andMe_allVariants.tab.CTGVL.CHR_BP.col1 | uniq -u > nallsEtAl2019_excluding23andMe_allVariants.tab.CTGVL.CHR_BP.col1.uniq`  
+`sort 1000G_20101123_v3_GIANT_chr1_23_Marker_Details.txt.CHR_BP.col1 | uniq -u > 1000G_20101123_v3_GIANT_chr1_23_Marker_Details.txt.CHR_BP.col1.uniq`  
+
+9. Do a line count of the original and generate unique file to see whether duplicates were removed
+
+`wc -l nallsEtAl2019_excluding23andMe_allVariants.tab.CTGVL.CHR_BP.col1 nallsEtAl2019_excluding23andMe_allVariants.tab.CTGVL.CHR_BP.col1.uniq`
+
+    17510618 nallsEtAl2019_excluding23andMe_allVariants.tab.CTGVL.CHR_BP.col1
+    17510618 nallsEtAl2019_excluding23andMe_allVariants.tab.CTGVL.CHR_BP.col1.uniq
+    
+No lines were removed, meaning that there were no duplicates in the GWASS file.
+
+`wc -l 1000G_20101123_v3_GIANT_chr1_23_Marker_Details.txt.CHR_BP.col1 1000G_20101123_v3_GIANT_chr1_23_Marker_Details.txt.CHR_BP.col1.uniq`  
+
+    31326390 1000G_20101123_v3_GIANT_chr1_23_Marker_Details.txt.CHR_BP.col1
+    31281348 1000G_20101123_v3_GIANT_chr1_23_Marker_Details.txt.CHR_BP.col1.uniq
+
+In the 1000G reference file, 45,042 lines were removed.
+
+10. Create new GWASS and 1000G references files with the duplicate chr_bp variant names removed
+
+`awk 'NR==FNR {FILE1[$1]=$0; next} ($1 in FILE1) {print $0}' nallsEtAl2019_excluding23andMe_allVariants.tab.CTGVL.CHR_BP.col1.uniq nallsEtAl2019_excluding23andMe_allVariants.tab.CTGVL.CHR_BP > nallsEtAl2019_excluding23andMe_allVariants.tab.CTGVL.CHR_BP.uniq`  
+
+`awk 'NR==FNR {FILE1[$1]=$0; next} ($1 in FILE1) {print $0}' 1000G_20101123_v3_GIANT_chr1_23_Marker_Details.txt.CHR_BP.col1.uniq 1000G_20101123_v3_GIANT_chr1_23_Marker_Details.txt.CHR_BP > 1000G_20101123_v3_GIANT_chr1_23_Marker_Details.txt.CHR_BP.uniq`  
+
+11. Merge the rsIDs in the 1000G reference file with the GWASS file
+
+`awk -v OFS='\t' 'NR==FNR { FILE1[$1]=$3; next} ($1 in FILE1) {print FILE1[$1], $0}' 1000G_20101123_v3_GIANT_chr1_23_Marker_Details.txt.CHR_BP.uniq nallsEtAl2019_excluding23andMe_allVariants.tab.CTGVL.CHR_BP.uniq > nallsEtAl2019_excluding23andMe_allVariants.tab.CTGVL.CHR_BP_1000G_20101123.withRSID.uniq`
+
+12. Count how many variants are left in the file compared to before the merge
+
+`wc -l nallsEtAl2019_excluding23andMe_allVariants.tab.CTGVL.CHR_BP.uniq nallsEtAl2019_excluding23andMe_allVariants.tab.CTGVL.CHR_BP_1000G_20101123.withRSID.uniq`
+
+    17510618 nallsEtAl2019_excluding23andMe_allVariants.tab.CTGVL.CHR_BP.uniq
+    13054284 nallsEtAl2019_excluding23andMe_allVariants.tab.CTGVL.CHR_BP_1000G_20101123.withRSID.uniq
+
+So, 4,456,334 variants have not been matched with an rsid.
+
+13. Manually insert the correct columns names using the joe text editor
+
+`joe nallsEtAl2019_excluding23andMe_allVariants.tab.CTGVL.CHR_BP_1000G_20101123.withRSID.uniq`
+
+14. View resulting output
+
+`head nallsEtAl2019_excluding23andMe_allVariants.tab.CTGVL.CHR_BP_1000G_20101123.withRSID.uniq.correctHeader`
+
+    SNP	CHR_BP	CHR	BP	A1	A2	FREQ	BETA	SE	P
+    rs11020170	11_88249377	11	88249377	T	C	0.9931	0.1575	0.1783	0.3771
+    rs116406626	1_60320992	1	60320992	A	G	0.9336	0.0605	0.0456	0.1846
+    rs11992603	8_135908647	8	135908647	A	G	0.2081	-0.0358	0.0273	0.1887
+    rs192908256	12_3871714	12	3871714	A	C	0.9972	0.1489	1.0636	0.8886
+    rs189372368	16_77148858	16	77148858	A	G	0.9976	-0.1213	0.3874	0.7543
+    rs11213687	11_97895884	11	97895884	C	G	0.0573	-0.0543	0.0481	0.2589
+    rs74472333	5_30588976	5	30588976	T	C	0.0022	2.038	1.1008	0.06412
+    rs117087366	7_8327736	7	8327736	A	T	0.9936	-0.1574	0.5317	0.7672
+    rs9967286	18_814730	18	814730	C	G	0.8804	0.0197	0.0354	0.5782
+
+15. Make sure the SNP names are only rsIDs as some variants may still not have an rsID assigned
+
+Here I use egrep to print lines with either "SNP" or "rs" in them (the former is to print the column names):  
+
+`egrep "rs|SNP" nallsEtAl2019_excluding23andMe_allVariants.tab.CTGVL.CHR_BP_1000G_20101123.withRSID.uniq.correctHeader > nallsEtAl2019_excluding23andMe_allVariants.tab.CTGVL.CHR_BP_1000G_20101123.withRSID.uniq.correctHeader.rsOnly`
+
+16. Check how many are removed
+
+`wc -l nallsEtAl2019_excluding23andMe_allVariants.tab.CTGVL.CHR_BP_1000G_20101123.withRSID.uniq.correctHeader nallsEtAl2019_excluding23andMe_allVariants.tab.CTGVL.CHR_BP_1000G_20101123.withRSID.uniq.correctHeader.rsOnly`
+
+    13054285 nallsEtAl2019_excluding23andMe_allVariants.tab.CTGVL.CHR_BP_1000G_20101123.withRSID.uniq.correctHeader
+    13038881 nallsEtAl2019_excluding23andMe_allVariants.tab.CTGVL.CHR_BP_1000G_20101123.withRSID.uniq.correctHeader.rsOnly
+
+15,404 lines were removed.
+
+The file was succesfully uploaded to CTG-VL, and LDSC produced a significant h2:
+    
+    Observed h2	Lambda GC	Mean Chi^2	Intercept	Ratio
+    0.0085 (0.0008)	1.0864	1.1318	0.9837 (0.0065)	Ratio <
+
+#### 3.2. Preparing Red hair color GWAS data:  
+
+##### 3.2.1. Removing NA's
+
+1. Remove lines containing "NA" values 
+
+`grep -v "NA" GWASinitialred1_22.assoc.logistic > GWASinitialred1_22.assoc.logistic.noNA`
+
+2. Re-format whitespaced delimited file to tab-delimited
+
+`awk -v OFS='\t' '{ $1=$1; print }' GWASinitialred1_22.assoc.logistic.noNA > GWASinitialred1_22.assoc.logistic.noNA.tabSpaced`
+
+In the command above, we are setting the TAB character as an Output Field Separator (OFS).  
+If we do not set the Field Separator (FS) variable, awk will replace multiple whitespace characters with a single TAB character (this is what we want).  
+Note the '$1=$1' which looks strange, since it seems that it does nothing.  
+Actually, it is the key to the two awk commands.  
+When a field is set, no matter if the value is changed or not, awk will apply some internal variables such as OFS to the record.   
+Here, we want awk to apply our customized OFS to the record. Therefore, we reset a field to trigger it.  
+If we print the record without setting at least one field (i.e., remove "$1=$1;" from the above command), awk will not apply the new OFS to the record.  
+
+The results appear to be from a logistic regression association analysis using PLINK.  
+
+From [PLINK](https://zzz.bwh.harvard.edu/plink/anal.shtml#glm) the columns details are:
+
+* CHR       Chromosome
+* SNP       SNP identifier
+* BP        Physical position (base-pair)
+* A1        Tested allele (minor allele by default) 
+* TEST      Code for the test (see below)
+* NMISS     Number of non-missing individuals included in analysis
+* BETA/OR   Regression coefficient (--linear) or odds ratio (--logistic)
+* STAT      Coefficient t-statistic 
+* P         Asymptotic p-value for t-statistic
+
+##### 3.2.2. Adding BETA, SE, FREQ and A2
+
+We know that BETA = LN(OR).  
+For large sample sizes the t-statistic is asymptotically equivalent to z-statistic (Z). And because Z = BETA / SE we can calculate the stnadard error (SE) as SE = BETA / Z.  
+Also note that A1 is the effect allele (and the minor allele by default).  
+
+1. Use awk to create and add a 10th and 11th column containing the BETA and SE values
+
+`awk -v OFS='\t' 'NR==1 {$10="BETA"; $11="SE"} NR>1 {$10=log($7); $11=log($7)/$8} {print $0}' GWASinitialred1_22.assoc.logistic.noNA.tabSpaced > GWASinitialred1_22.assoc.logistic.noNA.tabSpaced.BETA_SE`
+
+2. View head of the resulting file 
+
+`head GWASinitialred1_22.assoc.logistic.noNA.tabSpaced.BETA_SE`
+
+    CHR     SNP     BP      A1      TEST    NMISS   OR      STAT    P       BETA    SE
+    1       rs3115860       753405  C       ADD     299305  0.9942  -0.3347 0.7378  -0.00581689     0.0173794
+    1       rs2073813       753541  A       ADD     299124  0.9947  -0.305  0.7603  -0.00531409     0.0174233
+    1       rs3131969       754182  A       ADD     299136  0.9952  -0.2766 0.7821  -0.00481156     0.0173954
+    1       rs3131968       754192  A       ADD     299135  0.9947  -0.3055 0.7599  -0.00531409     0.0173947
+    1       rs3131967       754334  T       ADD     299140  0.9955  -0.2617 0.7936  -0.00451016     0.0172341
+    1       rs3115858       755890  A       ADD     299569  0.9928  -0.415  0.6781  -0.00722605     0.0174122
+    1       rs3131962       756604  A       ADD     299077  0.9939  -0.3509 0.7257  -0.00611868     0.0174371
+    1       rs3115853       757640  G       ADD     299478  0.996   -0.2338 0.8152  -0.00400802     0.0171429
+    1       rs4951929       757734  C       ADD     299600  0.9943  -0.3276 0.7432  -0.00571631     0.017449
+
+As detailed under 'Variant manifest file' on the [Pan-UKBB Technical details webpage](https://pan.ukbb.broadinstitute.org/docs/per-phenotype-files) at [link](https://pan.ukbb.broadinstitute.org/docs/per-phenotype-files#variant-manifest-file), we can obtain the effect (alternate) allele frequency for SNPs from the 'full_variant_qc_metrics.txt.bgz'. 
+
+* af_{pop}: The alternate allele frequency for this variant across all individuals in pop. The mean dosage divided by two.  
+
+So for European ancestry GWASS, we want column "af_EUR"
+
+I downloaded the 'Variant manifest file' directly to the HPC using `wget https://pan-ukb-us-east-1.s3.amazonaws.com/sumstats_release/full_variant_qc_metrics.txt.bgz`.  
+
+3. Create a new file containing the column names (header)
+
+`zcat full_variant_qc_metrics.txt.bgz | head -n1 > full_variant_qc_metrics.txt.head1`
+
+4. Transpose the single row of column names into separate rows
+
+`tr '\t' '\n' < full_variant_qc_metrics.txt.head1 > full_variant_qc_metrics.txt.head1.transposed`
+
+5. Add line numbers to the transposed file(s)
+
+`cat -n full_variant_qc_metrics.txt.head1.transposed > full_variant_qc_metrics.txt.head1.transposed.lineNo`
+
+If we want column "af_EUR", we want column number 34.  
+To match with the GWASS file, let's make a smaller file containing the 'rsID', 'alt', 'ref', and 'af_EUR' columns.  
+
+`zcat full_variant_qc_metrics.txt.bgz | awk -v FS='\t' -v OFS='\t' '{ print $5, $4, $3, $34 }' > full_variant_qc_metrics.txt.col5_4_3_34`
+
+6. Create a file containing only the riIDs
+
+`cut -f1 full_variant_qc_metrics.txt.col5_4_3_34 > full_variant_qc_metrics.txt.col5_4_3_34.col1`  
+
+7. Create a file containing only the unique rsID
+
+`sort full_variant_qc_metrics.txt.col5_4_3_34.col1 | uniq -u > full_variant_qc_metrics.txt.col5_4_3_34.col1.uniq`
+
+8. Compare original with uniq file to determin if duplicate rsIDs were present
+
+`wc -l full_variant_qc_metrics.txt.col5_4_3_34.col1 full_variant_qc_metrics.txt.col5_4_3_34.col1.uniq`
+
+    28987535 full_variant_qc_metrics.txt.col5_4_3_34.col1
+    28910873 full_variant_qc_metrics.txt.col5_4_3_34.col1.uniq
+
+It appears that there were duplicate rsIDs!
+
+9. Use awk to create a new references file with the duplicate rsIDs removed
+
+`awk 'NR==FNR {FILE1[$1]=$0; next} ($1 in FILE1) {print $0}' full_variant_qc_metrics.txt.col5_4_3_34.col1.uniq full_variant_qc_metrics.txt.col5_4_3_34 > full_variant_qc_metrics.txt.col5_4_3_34.uniq`
+
+10. Check the number of lines in the resulting file
+
+`wc -l full_variant_qc_metrics.txt.col5_4_3_34.uniq`
+
+    28910873 full_variant_qc_metrics.txt.col5_4_3_34.uniq
+
+The file 'full_variant_qc_metrics.txt.col5_4_3_34.uniq' looks ready to integrate with GWASS to extract missing alleles and allele frequencies.  
+
+11. Change the first column name from "rsID" to "SNP" to match the GWASS file using Joe text editor.
+
+12. Create a file containing only the riIDs
+
+`cut -f2 GWASinitialred1_22.assoc.logistic.noNA.tabSpaced.BETA_SE > GWASinitialred1_22.assoc.logistic.noNA.tabSpaced.BETA_SE.SNPcol`  
+
+13. Create a file containing only the unique rsID
+
+`sort GWASinitialred1_22.assoc.logistic.noNA.tabSpaced.BETA_SE.SNPcol | uniq -u > GWASinitialred1_22.assoc.logistic.noNA.tabSpaced.BETA_SE.SNPcol.uniq`  
+
+14. Compare original with uniq file to determin if duplicate rsIDs were present
+
+`wc -l GWASinitialred1_22.assoc.logistic.noNA.tabSpaced.BETA_SE.SNPcol GWASinitialred1_22.assoc.logistic.noNA.tabSpaced.BETA_SE.SNPcol.uniq`
+
+    8580268 GWASinitialred1_22.assoc.logistic.noNA.tabSpaced.BETA_SE.SNPcol
+    8580268 GWASinitialred1_22.assoc.logistic.noNA.tabSpaced.BETA_SE.SNPcol.uniq
+    17160536 total
+
+It appears that there were NO duplicate SNP rsIDs!
+
+15. Use awk to create a new references file that only contains SNPs that are in the GWASS file
+
+`awk 'NR==FNR {FILE1[$2]=$0; next} ($1 in FILE1) {print $0}' GWASinitialred1_22.assoc.logistic.noNA.tabSpaced.BETA_SE full_variant_qc_metrics.txt.col5_4_3_34.uniq > full_variant_qc_metrics.txt.col5_4_3_34.uniq.inGWASS`
+
+16. View the line count of the resulting file
+
+`wc -l full_variant_qc_metrics.txt.col5_4_3_34.uniq.inGWASS`
+
+    8563195 full_variant_qc_metrics.txt.col5_4_3_34.uniq.inGWASS
+
+17. Compare line count with the GWASS file
+
+`wc -l GWASinitialred1_22.assoc.logistic.noNA.tabSpaced.BETA_SE`
+
+    8580268 GWASinitialred1_22.assoc.logistic.noNA.tabSpaced.BETA_SE
+
+18. Given there are SNP in the GWASS that are not in the reference file, use awk to extract the overlapping SNP
+
+`awk 'NR==FNR {FILE1[$1]=$0; next} ($2 in FILE1) {print $0}' full_variant_qc_metrics.txt.col5_4_3_34.uniq.inGWASS GWASinitialred1_22.assoc.logistic.noNA.tabSpaced.BETA_SE > GWASinitialred1_22.assoc.logistic.noNA.tabSpaced.BETA_SE.inRef`
+
+19. View the line count of the resulting file
+
+`wc -l GWASinitialred1_22.assoc.logistic.noNA.tabSpaced.BETA_SE.inRef`
+
+    8563195 GWASinitialred1_22.assoc.logistic.noNA.tabSpaced.BETA_SE.inRef
+
+20. The GWASS and reference file can be pasted together as their lines should match
+
+`paste full_variant_qc_metrics.txt.col5_4_3_34.uniq.inGWASS GWASinitialred1_22.assoc.logistic.noNA.tabSpaced.BETA_SE.inRef > GWASinitialred1_22.assoc.logistic.noNA.tabSpaced.BETA_SE.withRef`
+
+21. View the line count of the resulting file
+
+`wc -l GWASinitialred1_22.assoc.logistic.noNA.tabSpaced.BETA_SE.withRef`
+
+    8563195 GWASinitialred1_22.assoc.logistic.noNA.tabSpaced.BETA_SE.withRef
+
+22. Write an awk script to only print lines where A1=alt hence A2=ref and FREQ=af_EUR, or A1=ref hence A2=alt and FREQ=1-af_EUR
+
+`awk -v OFS='\t' 'NR==1 {$16="A2"; $17="FREQ"; print $0 } NR>1 { if ($2 == $8) {$16=$3; $17=$4} else if ($3 == $8) {$16=$2; $17=1-$4} print $0 }' GWASinitialred1_22.assoc.logistic.noNA.tabSpaced.BETA_SE.withRef > GWASinitialred1_22.assoc.logistic.noNA.tabSpaced.BETA_SE.withRef.A2_FREQ`
+
+23. View the head of the resulting file
+
+`head GWASinitialred1_22.assoc.logistic.noNA.tabSpaced.BETA_SE.withRef.A2_FREQ`
+    
+    SNP     alt     ref     af_EUR  CHR     SNP     BP      A1      TEST    NMISS   OR      STAT    P       BETA    SE      A2      FREQ
+    rs3115860       A       C       8.7017e-01      1       rs3115860       753405  C       ADD     299305  0.9942  -0.3347 0.7378  -0.00581689     0.0173794       A       0.12983
+    rs2073813       A       G       1.2946e-01      1       rs2073813       753541  A       ADD     299124  0.9947  -0.305  0.7603  -0.00531409     0.0174233       G       1.2946e-01
+    rs3131969       G       A       8.6960e-01      1       rs3131969       754182  A       ADD     299136  0.9952  -0.2766 0.7821  -0.00481156     0.0173954       G       0.1304
+    rs3131968       G       A       8.6970e-01      1       rs3131968       754192  A       ADD     299135  0.9947  -0.3055 0.7599  -0.00531409     0.0173947       G       0.1303
+    rs3131967       C       T       8.6960e-01      1       rs3131967       754334  T       ADD     299140  0.9955  -0.2617 0.7936  -0.00451016     0.0172341       C       0.1304
+    rs3115858       T       A       8.6980e-01      1       rs3115858       755890  A       ADD     299569  0.9928  -0.415  0.6781  -0.00722605     0.0174122       T       0.1302
+    rs3131962       G       A       8.6934e-01      1       rs3131962       756604  A       ADD     299077  0.9939  -0.3509 0.7257  -0.00611868     0.0174371       G       0.13066
+    rs3115853       A       G       8.6842e-01      1       rs3115853       757640  G       ADD     299478  0.996   -0.2338 0.8152  -0.00400802     0.0171429       A       0.13158
+    rs4951929       T       C       8.6949e-01      1       rs4951929       757734  C       ADD     299600  0.9943  -0.3276 0.7432  -0.00571631     0.017449        T       0.13051
+
+##### 3.2.3. Extracting columns
+
+1. Use awk to extract the columns and print in order of the CTG-VL example file
+
+`awk -v OFS='\t' '{ print $5, $7, $6, $8, $16, $17, $14, $15, $13, $10 }' GWASinitialred1_22.assoc.logistic.noNA.tabSpaced.BETA_SE.withRef.A2_FREQ > GWASinitialred1_22.assoc.logistic.noNA.tabSpaced.BETA_SE.withRef.A2_FREQ.CTGVL`
+
+The file was successfully uploaded to CTG-VL, and the Manhattan plot looks okay (similar to that in Morgan et al. (2018). However, the LDSC did not produce a significant h2: 
+
+    Observed h2 (se)	Lambda GC	Mean Chi^2	Intercept (se)	Ratio
+    0.4368 (0.3231)		1.0436		1.5596		0.9987 (0.0106)	Ratio < 1
+
+However, Supplementary Table 8, reports the following Full Model Full model- SNP heritability (h2) for red hair using 8,580,268 SNPs: 0.403 (±0.281).  
+
+So the although they state the estimated a SNP h2 of 0.403 in the main text is was not significantly different from zero!?!  
+
+Supplementary Table 8 also indicates that LDSC analysis after removing the very significant regions on chr 16, 20 (and perhaps 15) produced significant SNP h2.  
+
+##### 3.2.4. Removing genome-wide significant SNPs
+
+1. Sort 'GWASinitialred1_22.assoc.logistic.noNA.tabSpaced.BETA_SE.withRef.A2_FREQ.CTGVL' by p-value
+
+`sort -k9,9g GWASinitialred1_22.assoc.logistic.noNA.tabSpaced.BETA_SE.withRef.A2_FREQ.CTGVL > GWASinitialred1_22.assoc.logistic.noNA.tabSpaced.BETA_SE.withRef.A2_FREQ.CTGVL.Psorted`
+
+2. View top 20 lines of resulting file
+
+`head -n20 GWASinitialred1_22.assoc.logistic.noNA.tabSpaced.BETA_SE.withRef.A2_FREQ.CTGVL.Psorted`
+    
+    10      75560391        rs199908182     CTA                     0.0324672       0.0171512       0.0584  299062
+    11      113346252       rs1799732       G                       -0.016536       0.0193562       0.3929  299391
+    1       21054041        rs199984518     C                       0.0695261       0.210877        0.7416  296474
+    12      22215374        rs140406732     TATC                    -1.20164        0.713141        0.09206 299322
+    12      48091521        rs201800314     A                       0.0158733       0.0217057       0.4646  299005
+    16      83143158        rs57154009      A                       -0.026344       0.0211939       0.2138  299239
+    18      8786012 rs201927020     A                       -0.256054       0.134553        0.05699 299501
+    6       107102651       rs137929985     T                       -0.0760175      0.285565        0.7901  299154
+    9       100128026       rs200136328     C                       -0.29989        0.510016        0.5565  299375
+    9       11323311        rs186584575     C                       -0.0176549      0.0271531       0.5156  299257
+    CHR     BP      SNP     A1      A2      FREQ    BETA    SE      P       NMISS
+    16      88670459        rs117463496     C       T       2.5230e-02      0.984323        0.0256668       0       298988
+    16      88769213        rs80030016      G       A       2.5757e-02      1.10194 0.0249703       0       299068
+    16      88769758        rs75410747      A       G       2.5809e-02      1.10724 0.0246547       0       299651
+    16      88780488        rs74880807      G       C       5.4035e-02      0.767791        0.0200311       0       297544
+    16      88792251        rs116971855     G       T       2.6790e-02      1.12135 0.0240685       0       299102
+    16      88792529        rs74597321      A       G       2.6851e-02      1.1233  0.0240074       0       299101
+    16      88864897        rs111504162     A       G       1.3553e-01      0.608678        0.0146988       0       294157
+    16      88898785        rs75267235      T       C       4.8691e-02      0.889947        0.0199495       0       299091
+    16      88911971        rs150547406     G       A       4.1102e-02      1.00796 0.0208817       0       298080
+
+The first 10 lines contain missing allele information, so these lines should be removed.
+
+3. Remove the lines
+
+`sed '1,10d' GWASinitialred1_22.assoc.logistic.noNA.tabSpaced.BETA_SE.withRef.A2_FREQ.CTGVL.Psorted > GWASinitialred1_22.assoc.logistic.noNA.tabSpaced.BETA_SE.withRef.A2_FREQ.CTGVL.Psorted.corrected`  
+
+4. Use Joe to remove SNPs with P = 0
+
+`joe GWASinitialred1_22.assoc.logistic.noNA.tabSpaced.BETA_SE.withRef.A2_FREQ.CTGVL.Psorted.corrected`  
+
+Save file as 'GWASinitialred1_22.assoc.logistic.noNA.tabSpaced.BETA_SE.withRef.A2_FREQ.CTGVL.Psorted.corrected.no0'
+
+5. Use Joe to change column name "NMISS" to "N"
+
+`joe GWASinitialred1_22.assoc.logistic.noNA.tabSpaced.BETA_SE.withRef.A2_FREQ.CTGVL.Psorted.corrected.no0`
+
+Save file as 'GWASinitialred1_22.assoc.logistic.noNA.tabSpaced.BETA_SE.withRef.A2_FREQ.CTGVL.Psorted.corrected.no0.N'
+
+6. Use Joe to remove genome-wide significant SNPs (P < 5E-08)
+
+`joe GWASinitialred1_22.assoc.logistic.noNA.tabSpaced.BETA_SE.withRef.A2_FREQ.CTGVL.Psorted.corrected.no0.N`  
+
+Save file as 'GWASinitialred1_22.assoc.logistic.noNA.tabSpaced.BETA_SE.withRef.A2_FREQ.CTGVL.Psorted.corrected.no0.N.noGWS'
+
+The file was successfully uploaded to CTG-VL and produced a significant h2:
+
+    Observed h2	Lambda GC	Mean Chi^2	Intercept	Ratio
+    0.0108 (0.0023)	1.0375	1.0621	0.9987 (0.0106)	Ratio <
+
+#### 3.3. Preparing Melanoma GWAS data:  
+
+##### 3.3.1. Extracting columns
+
+1. Extract the column names and write to a new file
+
+`head categorical-20001-both_sexes-1059.tsv -n1 > categorical-20001-both_sexes-1059.tsv.head1`
+
+2. Transpose the column names
+
+`tr '\t' '\n' < categorical-1747-both_sexes-2.tsv.head1 > categorical-20001-both_sexes-1059.tsv.head1.transposed1`
+
+3. Add line number to the transposed file
+
+`cat -n categorical-20001-both_sexes-1059.tsv.head1.transposed1 > categorical-20001-both_sexes-1059.tsv.head1.transposed1.lineNo`
+
+4. View the resulting file
+
+`more categorical-20001-both_sexes-1059.tsv.head1.transposed1.lineNo`
+
+    1       chr
+    2       pos
+    3       ref
+    4       alt
+    5       af_cases_EUR
+    6       af_controls_EUR
+    7       beta_EUR
+    8       se_EUR
+    9       pval_EUR
+    10      low_confidence_EUR
+
+So referring back to the format we want: CHR BP SNP A1 A2 FREQ BETA SE P N
+
+We want the following column numbers from ‘categorical-1747-both_sexes-2.tsv’ 1 2 ? 4 3 6 7 8 9 ?
+
+5. Choose selected columns
+
+`awk -v OFS='\t' '{ print $1, $2, $4, $3, $6, $7, $8, $9 }' categorical-20001-both_sexes-1059.tsv > categorical-20001-both_sexes-1059.tsv.CTGVL`
+
+6. Check if it worked  
+
+`head categorical-20001-both_sexes-1059.tsv.CTGVL`
+
+    chr	pos	alt	ref	af_controls_EUR	beta_EUR	se_EUR	pval_EUR
+    1	11063	G	T	4.793e-05	1.401e+00	7.018e+00	-1.722e-01
+    1	13259	A	G	2.796e-04	-8.672e-01	7.910e-01	-1.298e+00
+    1	17641	A	G	8.289e-04	3.910e-01	4.636e-01	-9.188e-01
+    1	30741	A	C	NA	NA	NA	NA
+    1	51427	G	T	NA	NA	NA	NA
+    1	57222	C	T	6.610e-04	-5.263e-01	5.307e-01	-1.135e+00
+    1	58396	C	T	2.386e-04	8.711e-01	7.932e-01	-1.302e+00
+    1	62745	G	C	NA	NA	NA	NA
+    1	63668	A	G	2.795e-05	-1.349e+00	2.646e+00	-4.940e-01
+
+##### 3.3.2. Adding rsID's
+
+As detailed under ‘Variant manifest file’ on the Pan-UKBB Technical details webpage we can obtain the rsIDs from the ‘full_variant_qc_metrics.txt.bgz’.
+
+1. Download the ‘Variant manifest file’ directly to the HPC using the following ‘Amazon AWS’ link
+
+`wget https://pan-ukb-us-east-1.s3.amazonaws.com/sumstats_release/full_variant_qc_metrics.txt.bgz`
+
+2. Unzip file
+
+`zcat full_variant_qc_metrics.txt.bgz > full_variant_qc_metrics.txt`
+
+3. Exract the rsID column
+
+`cut -f5 full_variant_qc_metrics.txt > full_variant_qc_metrics.txt.rsID`
+
+4. Combine the two files
+
+`paste full_variant_qc_metrics.txt.rsID categorical-20001-both_sexes-1059.tsv.CTGVL > categorical-20001-both_sexes-1059.tsv.CTGVL.withRSID`  
+
+5. Use grep to extract rows containing “rs”
+
+`grep "rs" categorical-20001-both_sexes-1059.tsv.CTGVL.withRSID > categorical-20001-both_sexes-1059.tsv.CTGVL.withRSIDonly`
+
+6. Count the number of rows (variants with an rsID) in the new file
+
+`wc -l categorical-20001-both_sexes-1059.tsv.CTGVL.withRSIDonly`
+
+    27649608 categorical-20001-both_sexes-1059.tsv.CTGVL.withRSIDonly
+
+7. Check file
+
+`head categorical-20001-both_sexes-1059.tsv.CTGVL.withRSIDonly`
+
+    rsid	chr	pos	alt	ref	af_controls_EUR	beta_EUR	se_EUR	pval_EUR
+    rs561109771	1	11063	G	T	4.793e-05	1.401e+00	7.018e+00	-1.722e-01
+    rs562993331	1	13259	A	G	2.796e-04	-8.672e-01	7.910e-01	-1.298e+00
+    rs578081284	1	17641	A	G	8.289e-04	3.910e-01	4.636e-01	-9.188e-01
+    rs558169846	1	30741	A	C	NA	NA	NA	NA
+    rs551041711	1	51427	G	T	NA	NA	NA	NA
+    rs576081345	1	57222	C	T	6.610e-04	-5.263e-01	5.307e-01	-1.135e+00
+    rs570371753	1	58396	C	T	2.386e-04	8.711e-01	7.932e-01	-1.302e+00
+    rs559597719	1	62745	G	C	NA	NA	NA	NA
+    rs561430336	1	63668	A	G	2.795e-05	-1.349e+00	2.646e+00	-4.940e-01
+
+##### 3.3.3. Removing NA's
+
+1. Use grep to remove rows containing “NA” 
+
+`grep -v "NA" categorical-20001-both_sexes-1059.tsv.CTGVL.withRSIDonly > categorical-20001-both_sexes-1059.tsv.CTGVL.withRSIDonlynoNA`
+
+2. Rename column names using Joe text editor
+
+`joe categorical-20001-both_sexes-1059.tsv.CTGVL.withRSIDonlynoNA` 
+
+From:
+rsid chr pos alt ref af_controls_EUR beta_EUR se_EUR pval_EUR
+
+To:
+SNP CHR BP A1 A2 FREQ BETA SE lnP
+
+Save as ‘categorical-20001-both_sexes-1059.tsv.CTGVL.withRSIDonlynoNA.colnames’
+
+3. View resulting file
+
+`head categorical-20001-both_sexes-1059.tsv.CTGVL.withRSIDonlynoNA.colnames`  
+
+    SNP	CHR	BP	A1	A2	FREQ	BETA	SE	lnP
+    rs561109771	1	11063	G	T	4.793e-05	1.401e+00	7.018e+00	-1.722e-01
+    rs562993331	1	13259	A	G	2.796e-04	-8.672e-01	7.910e-01	-1.298e+00
+    rs578081284	1	17641	A	G	8.289e-04	3.910e-01	4.636e-01	-9.188e-01
+    rs576081345	1	57222	C	T	6.610e-04	-5.263e-01	5.307e-01	-1.135e+00
+    rs570371753	1	58396	C	T	2.386e-04	8.711e-01	7.932e-01	-1.302e+00
+    rs561430336	1	63668	A	G	2.795e-05	-1.349e+00	2.646e+00	-4.940e-01
+    rs2531267	1	69569	C	T	1.869e-04	-1.115e+00	9.730e-01	-1.379e+00
+    rs557418932	1	79192	G	T	8.222e-05	-1.029e+00	1.391e+00	-7.778e-01
+    rs554639997	1	91588	A	G	1.587e-04	-2.213e-02	9.887e-01	-1.802e-02
+
+
+##### 3.3.4. Convert ln(P) to P
+
+1. Convert ln(P) values in column 9 to P values P-values are stored as natural log p-values to avoid underflow (i.e., ln P, not -ln P or -log10 P)
+
+`awk -v OFS='\t' '{print $0, exp($9)}' categorical-20001-both_sexes-1059.tsv.CTGVL.withRSIDonlynoNA.colnames > categorical-20001-both_sexes-1059.tsv.CTGVL.withRSIDonlynoNA.colnames.P`
+
+2. Use Joe text editor to rename new column "1" as "P", save as same file name
+
+`joe categorical-20001-both_sexes-1059.tsv.CTGVL.withRSIDonlynoNA.colnames.P`  
+
+3. View file
+
+`head categorical-20001-both_sexes-1059.tsv.CTGVL.withRSIDonlynoNA.colnames.P`
+
+    SNP	CHR	BP	A1	A2	FREQ	BETA	SE	lnP	P
+    rs561109771	1	11063	G	T	4.793e-05	1.401e+00	7.018e+00	-1.722e-01	0.841811
+    rs562993331	1	13259	A	G	2.796e-04	-8.672e-01	7.910e-01	-1.298e+00	0.273077
+    rs578081284	1	17641	A	G	8.289e-04	3.910e-01	4.636e-01	-9.188e-01	0.398998
+    rs576081345	1	57222	C	T	6.610e-04	-5.263e-01	5.307e-01	-1.135e+00	0.321422
+    rs570371753	1	58396	C	T	2.386e-04	8.711e-01	7.932e-01	-1.302e+00	0.271987
+    rs561430336	1	63668	A	G	2.795e-05	-1.349e+00	2.646e+00	-4.940e-01	0.610181
+    rs2531267	1	69569	C	T	1.869e-04	-1.115e+00	9.730e-01	-1.379e+00	0.25183
+    rs557418932	1	79192	G	T	8.222e-05	-1.029e+00	1.391e+00	-7.778e-01	0.459416
+    rs554639997	1	91588	A	G	1.587e-04	-2.213e-02	9.887e-01	-1.802e-02	0.982141
+
+The file was successfully uploaded to CTG-VL and produced a significant h2:
+    
+    Observed h2	Lambda GC	Mean Chi^2	Intercept	Ratio
+    0.0044 (0.0013)	1.0285	1.0339	0.9972 (0.0065)	Ratio <
+
+-----------------------------------
+
+### 4. LDSC SNP-based heritability analysis
+
+SNP-based heritability analysis was conducted on the [CTG-VL](https://vl-dev.genoma.io/analyses/ldscore). Under the 'Analyses' tab I selected 'LD-score'. Under 'Select analysis' I selected 'Heritability' and under 'Select GWAS' I selected the trait GWAS.  
+
+#### 4.1. Parkinson's disease  
+
+This gave the following results for Parkinson's disease:
+    
+    Observed h2	Lambda GC	Mean Chi^2	Intercept	Ratio
+    0.0085 (0.0008)	1.0864	1.1318	0.9837 (0.0065)	Ratio <
+    
+Plotting the results in Excel calculated the following 95% CI and P-value:
+
+    h2	h2_SE		h2_L95CI	h2_U95CI	h2 (95%CI)	ABS(Z-statistic)		Copy and Paste into R	P-value
+    0.0085	0.0008		0.0069	0.0101	0.0085 (95%CI: 0.0069-0.0101)	10.625		2*pnorm(10.625,lower.tail=FALSE)	2.28E-20
+
+The P-value is significant meaning that the SNP-based heritability is significant.
+
+#### 4.2. Red hair color  
+
+This gave the following results for red hair color:
+        
+    Observed h2	Lambda GC	Mean Chi^2	Intercept	Ratio
+    0.0108 (0.0023)	1.0375	1.0621	0.9987 (0.0106)	Ratio <
+        
+Plotting the results in Excel calculated the following 95% CI and P-value:
+    
+    h2	h2_SE		h2_L95CI	h2_U95CI	h2 (95%CI)	ABS(Z-statistic)		Copy and Paste into R	P-value
+    0.0108	0.0023		0.0063	0.0153	0.0108 (95%CI: 0.0063-0.0153)	4.695652174		2*pnorm(4.69565217391304,lower.tail=FALSE)	2.66E-06
+
+The P-value is significant meaning that the SNP-based heritability is significant.
+
+#### 4.3. Melanoma  
+
+This gave the following results for melanoma:
+            
+    Observed h2	Lambda GC	Mean Chi^2	Intercept	Ratio
+    0.0044 (0.0013)	1.0285	1.0339	0.9972 (0.0065)	Ratio <
+            
+Plotting the results in Excel calculated the following 95% CI and P-value:
+
+    h2	h2_SE		h2_L95CI	h2_U95CI	h2 (95%CI)	ABS(Z-statistic)		Copy and Paste into R	P-value
+    0.0044	0.0013		0.0019	0.0069	0.0044 (95%CI: 0.0019-0.0069)	3.384615385		2*pnorm(3.38461538461539,lower.tail=FALSE)	7.13E-04
+
+The P-value is significant meaning that the SNP-based heritability is significant.
+ 
+---------------------------------
+
+### 5. LDSC Genetic correlation analysis  
+
+SNP-based heritability analysis was conducted on the [CTG-VL](https://vl-dev.genoma.io/analyses/ldscore). Under the 'Analyses' tab I selected 'LD-score'. Under 'Select analysis' I selected 'Genetic correlation' and under 'Select GWAS' I selected the two trait GWAS that I wanted to estimate the genetic correlation for.  
+
+#### 5.1. Parkinson's disease vs red hair color  
+
+This gave the following results for Parkinson's disease vs red hair color:
+                
+    rG	se	z	P	h2_obs	h2_obs_se	h2_int	h2_int_se	gcov_int	gcov_int_se
+    0.004	0.0814	0.0487	0.9612	0.0087	0.0009	0.9815	0.0078	-0.0063	0.0052
+                
+Plotting the results in Excel calculated the following 95% CI and P-value:
+
+    rG	rG_SE		rG_L95CI	rG_U95CI	rG (95%CI)	Z-statistic		Copy and Paste into R	P-value
+    0.0040	0.0814		-0.1555	0.1635	0.004 (95%CI: -0.1555-0.1635)	0.049140049		2*pnorm(0.0491400491400491,lower.tail=FALSE)	9.61E-01
+
+The P-value is not significant meaning that the genetic correlation is not significant.
+
+The sample overlap was also estimated in Excel:
+    
+    gcov_int	gcov_int_SE		gcov_int_L95CI	gcov_int_U95CI	gcov_int (95%CI)	Z-statistic   Copy and Paste into R	P-value
+    -0.0063	0.0052		-0.0165	0.0039	-0.0063 (95%CI: -0.0165-0.0039)	1.211538462		2*pnorm(1.21153846153846,lower.tail=FALSE)	0.2256891
+    
+The P-value is not significant meaning that there is no significant sample overlap.
+
+#### 5.2. Parkinson's disease vs melanoma  
+
+This gave the following results for Parkinson's disease vs melanoma:
+                
+    rG	se	z	P	h2_obs	h2_obs_se	h2_int	h2_int_se	gcov_int	gcov_int_se   
+    0.0428	0.0999	0.4279	0.6687	0.0044	0.0013	0.9967	0.0065	0.0018	0.0043
+                
+Plotting the results in Excel calculated the following 95% CI and P-value:
+
+    rG	rG_SE		rG_L95CI	rG_U95CI	rG (95%CI)	Z-statistic		Copy and Paste into R	P-value
+    0.0428	0.0999		-0.1530	0.2386	0.0428 (95%CI: -0.153-0.2386)	0.428428428		2*pnorm(0.428428428428428,lower.tail=FALSE)   0.6683392
+
+The P-value is not significant meaning that the genetic correlation is not significant.
+
+The sample overlap was also estimated in Excel:
+    
+    gcov_int	gcov_int_SE		gcov_int_L95CI	gcov_int_U95CI	gcov_int (95%CI)	Z-statistic   Copy and Paste into R	P-value
+    0.0018	0.0043		-0.0066	0.0102	0.0018 (95%CI: -0.0066-0.0102)	0.418604651		2*pnorm(0.418604651162791,lower.tail=FALSE)	0.6755051
+    
+The P-value is not significant meaning that there is no significant sample overlap.
+
+----------------------------------
+
+### 6. Causal association analysis using GSMR  
+
+Generalized Summary statistics Mendelian Randomization (GSMR) was conducted on the [CTG-VL](https://vl-dev.genoma.io/analyses/gsmr). Under the 'Analyses' tab I selected 'GSMR'.
+
+#### 6.1. Parkinson's disease and red hair color
+
+Under 'Select Outcome' I chose Parkinson's disease GWAS, and under 'Select Exposure' I chose the red hair color GWAS. However, because I had removed all the significant SNPs from the red hair color GWAS, there were not enough significant loci to carry out this analysis.  
+I therefore tried to reverse the outcome and exposure, which yielded the following result:  
+    
+    Exposure	Outcome	Effect	SE	P	#SNPs	HEIDI test P
+    pd_gwas	red_hair_gwas	-0.0485511	0.0208959	0.0201534	14	0.0714966
+    
+This gave a significant P-value indicating that there is a causal association between Parkinson's disease and red hair color. This also means that Parkinson's disease has an effect on red hair color.
+
+#### 6.2. Parkinson's disease and melanoma
+
+Under 'Select Outcome' I chose Parkinson's disease GWAS, and under 'Select Exposure' I chose the melanoma GWAS. 
+This yielded the following result:
+    
+    Exposure	Outcome	Effect	SE	P	#SNPs	HEIDI test P
+    melanoma_gwas	pd_gwas_1	-0.0396996	0.0420018	0.344562	6	0.10932
+    
+This did not give a significant P-value indicating that there is not a causal association between Parkinson's disease and melanoma. Melanoma does not seem to have an effect on Parkinson's disease.
+
+If I reversed the outcome and exposure, it yielded the following result:  
+        
+    Exposure	Outcome	Effect	SE	P	#SNPs	HEIDI test P
+    pd_gwas_1	melanoma_gwas	0.0732549	0.0436844	0.0935601	15	0.0669798
+        
+This did not give a significant P-value either indicating that there is not a causal association between melanoma and Parkinson's disease. Parkinson's disease does not seem to have an effect on melanoma.
+
+
+
+
